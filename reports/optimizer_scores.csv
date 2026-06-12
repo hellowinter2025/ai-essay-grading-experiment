@@ -1,0 +1,5 @@
+﻿optimizer_ai,n,mean_score,mean_full_score,score_rate
+deepseek_v4,192,19.0938,20.0000,0.9547
+mimo_v25,192,19.1458,20.0000,0.9573
+yumu_gemini35,192,19.1979,20.0000,0.9599
+yumu_gpt55,192,19.3490,20.0000,0.9674

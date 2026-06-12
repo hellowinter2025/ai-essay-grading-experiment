@@ -1,0 +1,30 @@
+[
+  {
+    "id": "yumu_gpt55",
+    "provider": "yumu",
+    "base_url": "https://api.yumu.fun/v1",
+    "api_key_env": "Yumu-key",
+    "model": "gpt-5.5"
+  },
+  {
+    "id": "yumu_gemini35",
+    "provider": "yumu",
+    "base_url": "https://api.yumu.fun/v1",
+    "api_key_env": "Yumu-key",
+    "model": "gemini-3.5-flash"
+  },
+  {
+    "id": "deepseek_v4",
+    "provider": "deepseek",
+    "base_url": "https://api.deepseek.com",
+    "api_key_env": "Deepseek-key",
+    "model": "deepseek-v4-pro"
+  },
+  {
+    "id": "mimo_v25",
+    "provider": "mimo",
+    "base_url": "https://token-plan-cn.xiaomimimo.com/v1",
+    "api_key_env": "Mimo-key",
+    "model": "mimo-v2.5-pro"
+  }
+]

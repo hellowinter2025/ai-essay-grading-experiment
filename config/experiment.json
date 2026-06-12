@@ -1,0 +1,23 @@
+{
+  "levels": {
+    "practical_15": {
+      "high": 15,
+      "medium": 10,
+      "low": 5
+    },
+    "continuation_25": {
+      "high": 25,
+      "medium": 17,
+      "low": 8
+    }
+  },
+  "essay_counts_per_model_topic_type": {
+    "high": 2,
+    "medium": 2,
+    "low": 1
+  },
+  "grading_repeats": 3,
+  "optimized_grading_repeats": 1,
+  "exclude_optimizer_from_optimized_grading": true,
+  "per_model_concurrency": 1
+}
