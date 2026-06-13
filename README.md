@@ -57,7 +57,7 @@
 
 - `REPORT.md`
 - `reports/summary.md`
-- `reports/report.html`
+- `reports/report.html`，其中包含常规评分细分、稳定性/一致性指标、作文优化前后对比和可视化图表
 
 ## 文件说明
 
@@ -74,7 +74,7 @@
 | `data/optimized_essays.jsonl` | 优化建议与优化作文 |
 | `data/optimized_grading_runs.jsonl` | 优化作文互评结果 |
 | `reports/summary.md` | 主要数字摘要 |
-| `reports/report.html` | 带统计图的HTML报告 |
+| `reports/report.html` | 带统计图、稳定性/一致性指标和优化前后对比的HTML报告 |
 | `reports/model_bias.csv` | 各评分模型误差统计 |
 | `reports/optimizer_scores.csv` | 各优化模型互评得分统计 |
 

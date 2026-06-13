@@ -38,6 +38,9 @@ LEVEL_LABELS = {
     "low": "下等",
 }
 
+TASK_ORDER = ["practical_15", "continuation_25"]
+LEVEL_ORDER = ["high", "medium", "low"]
+
 
 def read_jsonl(name):
     path = DATA / f"{name}.jsonl"
@@ -227,6 +230,36 @@ def distribution_chart(title, subtitle, rows, width=920, height=360):
     return "".join(parts) + "</svg>"
 
 
+def paired_bar_chart(title, subtitle, rows, width=920, height=420):
+    margin = {"top": 58, "right": 30, "bottom": 88, "left": 58}
+    plot_w = width - margin["left"] - margin["right"]
+    plot_h = height - margin["top"] - margin["bottom"]
+    max_value = max([0.1] + [row["before"] for row in rows] + [row["after"] for row in rows])
+    y_zero = margin["top"] + plot_h
+    scale = plot_h / max_value
+    group_w = plot_w / max(1, len(rows))
+    bar_w = min(24, group_w / 3.2)
+    parts = svg_shell(width, height, title, subtitle)
+    parts.append(f'<line x1="{margin["left"]}" y1="{y_zero:.1f}" x2="{width - margin["right"]}" y2="{y_zero:.1f}" class="axis"/>')
+    for i, row in enumerate(rows):
+        center = margin["left"] + group_w * i + group_w / 2
+        for j, key in enumerate(["before", "after"]):
+            value = row[key]
+            x = center + (j - 1) * bar_w
+            h = value * scale
+            y = y_zero - h
+            color = "#94a3b8" if key == "before" else "#2563eb"
+            parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w - 4:.1f}" height="{h:.1f}" rx="4" fill="{color}"/>')
+            parts.append(f'<text x="{x + (bar_w - 4) / 2:.1f}" y="{y - 7:.1f}" class="value" text-anchor="middle">{fmt(value)}</text>')
+        parts.append(f'<text x="{center:.1f}" y="{height - 52}" class="xlab" text-anchor="middle">{esc(row["label"])}</text>')
+        parts.append(f'<text x="{center:.1f}" y="{height - 34}" class="tick" text-anchor="middle">提升 {fmt(row["gain"])}</text>')
+    parts.append(f'<rect x="{margin["left"]}" y="{height - 20}" width="12" height="12" rx="2" fill="#94a3b8"/>')
+    parts.append(f'<text x="{margin["left"] + 18}" y="{height - 10}" class="legend">优化前</text>')
+    parts.append(f'<rect x="{margin["left"] + 110}" y="{height - 20}" width="12" height="12" rx="2" fill="#2563eb"/>')
+    parts.append(f'<text x="{margin["left"] + 128}" y="{height - 10}" class="legend">优化后</text>')
+    return "".join(parts) + "</svg>"
+
+
 def svg_shell(width, height, title, subtitle):
     return [
         f'<svg class="chart" viewBox="0 0 {width} {height}" role="img" aria-label="{esc(title)}">',
@@ -260,6 +293,7 @@ def main():
     repeated = defaultdict(list)
     scatter_points = []
     distribution_rows = []
+    source_scores = defaultdict(list)
 
     for grade in grades:
         score = number(grade.get("score"))
@@ -267,6 +301,7 @@ def main():
         if score is None or not essay:
             continue
         name = model_name(grade["grader_ai"])
+        source_scores[(grade["essay_id"], name)].append(score)
         target = float(essay["target_score"])
         by_model[name]["n"] += 1
         by_model[name]["abs"] += abs(score - target)
@@ -287,7 +322,88 @@ def main():
         if len(values) >= 2:
             stability[name].append(stdev(values))
 
+    panel_mean = defaultdict(list)
+    for (_name, essay_id), values in repeated.items():
+        panel_mean[essay_id].append(mean(values))
+    panel_mean = {essay_id: mean(values) for essay_id, values in panel_mean.items()}
+
+    level_detail_rows = []
+    regular_detail_rows = []
+    for name in sorted({key[0] for key in repeated}):
+        for level in LEVEL_ORDER:
+            vals = []
+            biases = []
+            repeat_stds = []
+            agreement_devs = []
+            fulls = []
+            for (model, essay_id), scores in repeated.items():
+                if model != name:
+                    continue
+                essay = essay_by_id[essay_id]
+                if essay["essay_level"] != level:
+                    continue
+                avg_score = mean(scores)
+                vals.append(avg_score)
+                biases.append(avg_score - float(essay["target_score"]))
+                repeat_stds.append(stdev(scores))
+                agreement_devs.append(abs(avg_score - panel_mean[essay_id]))
+                fulls.append(float(essay["full_score"]))
+            if vals:
+                full = mean(fulls)
+                level_detail_rows.append({
+                    "模型": name,
+                    "档位": LEVEL_LABELS[level],
+                    "样本数": len(vals),
+                    "平均评分": fmt(mean(vals)),
+                    "平均偏差": fmt(mean(biases)),
+                    "三轮标准差": fmt(mean(repeat_stds)),
+                    "稳定性分": fmt(max(0, 100 * (1 - mean(repeat_stds) / full)), 1),
+                    "一致偏离": fmt(mean(agreement_devs)),
+                    "一致性分": fmt(max(0, 100 * (1 - mean(agreement_devs) / full)), 1),
+                })
+        for task in TASK_ORDER:
+            for level in LEVEL_ORDER:
+                vals = []
+                abs_errors = []
+                biases = []
+                repeat_stds = []
+                agreement_devs = []
+                fulls = []
+                targets = []
+                for (model, essay_id), scores in repeated.items():
+                    if model != name:
+                        continue
+                    essay = essay_by_id[essay_id]
+                    if essay["essay_type"] != task or essay["essay_level"] != level:
+                        continue
+                    avg_score = mean(scores)
+                    target = float(essay["target_score"])
+                    vals.append(avg_score)
+                    targets.append(target)
+                    abs_errors.append(abs(avg_score - target))
+                    biases.append(avg_score - target)
+                    repeat_stds.append(stdev(scores))
+                    agreement_devs.append(abs(avg_score - panel_mean[essay_id]))
+                    fulls.append(float(essay["full_score"]))
+                if vals:
+                    full = mean(fulls)
+                    regular_detail_rows.append({
+                        "模型": name,
+                        "题型": TASK_LABELS[task],
+                        "档位": LEVEL_LABELS[level],
+                        "样本数": len(vals),
+                        "目标分": fmt(mean(targets)),
+                        "平均评分": fmt(mean(vals)),
+                        "平均绝对误差": fmt(mean(abs_errors)),
+                        "平均偏差": fmt(mean(biases)),
+                        "三轮标准差": fmt(mean(repeat_stds)),
+                        "稳定性分": fmt(max(0, 100 * (1 - mean(repeat_stds) / full)), 1),
+                        "一致偏离": fmt(mean(agreement_devs)),
+                        "一致性分": fmt(max(0, 100 * (1 - mean(agreement_devs) / full)), 1),
+                    })
+
     optimizer = defaultdict(lambda: {"n": 0, "score": 0.0, "full": 0.0})
+    optimization_detail = defaultdict(lambda: {"before": [], "after": [], "gain": []})
     for grade in opt_grades:
         score = number(grade.get("score"))
         opt = opt_by_id.get(grade["optimized_essay_id"])
@@ -300,6 +416,14 @@ def main():
         optimizer[name]["n"] += 1
         optimizer[name]["score"] += score
         optimizer[name]["full"] += float(src["full_score"])
+        grader_name = model_name(grade["grader_ai"])
+        before_scores = source_scores.get((src["essay_id"], grader_name), [])
+        if before_scores:
+            before = mean(before_scores)
+            key = (name, src["essay_type"])
+            optimization_detail[key]["before"].append(before)
+            optimization_detail[key]["after"].append(score)
+            optimization_detail[key]["gain"].append(score - before)
 
     model_rows = []
     for name in sorted(by_model):
@@ -322,15 +446,18 @@ def main():
 
     type_rows = []
     heat_rows = []
-    for key in sorted(by_type_level):
-        task, level = key
-        row = by_type_level[key]
-        n = row["n"]
-        avg_target = row["target"] / n
-        avg_score = row["score"] / n
-        label = f"{TASK_LABELS.get(task, task)} / {LEVEL_LABELS.get(level, level)}"
-        type_rows.append({"label": label, "target": avg_target, "score": avg_score})
-        heat_rows.append({"task": task, "level": level, "bias": avg_score - avg_target})
+    for task in TASK_ORDER:
+        for level in LEVEL_ORDER:
+            key = (task, level)
+            if key not in by_type_level:
+                continue
+            row = by_type_level[key]
+            n = row["n"]
+            avg_target = row["target"] / n
+            avg_score = row["score"] / n
+            label = f"{TASK_LABELS.get(task, task)} / {LEVEL_LABELS.get(level, level)}"
+            type_rows.append({"label": label, "target": avg_target, "score": avg_score})
+            heat_rows.append({"task": task, "level": level, "bias": avg_score - avg_target})
 
     optimizer_rows = []
     for name in sorted(optimizer):
@@ -338,6 +465,33 @@ def main():
         n = row["n"]
         rate = (row["score"] / n) / (row["full"] / n)
         optimizer_rows.append({"label": name, "rate": rate, "color": COLORS.get(name, "#2563eb")})
+
+    optimization_rows = []
+    optimization_chart_rows = []
+    for name in sorted({key[0] for key in optimization_detail}):
+        for task in TASK_ORDER:
+            data = optimization_detail.get((name, task))
+            if not data or not data["after"]:
+                continue
+            before = mean(data["before"])
+            after = mean(data["after"])
+            gain = mean(data["gain"])
+            full = 15 if task == "practical_15" else 25
+            optimization_rows.append({
+                "优化模型": name,
+                "题型": TASK_LABELS[task],
+                "互评记录数": len(data["after"]),
+                "优化前平均分": fmt(before),
+                "优化后平均分": fmt(after),
+                "平均提升": fmt(gain),
+                "优化后得分率": fmt(after / full, 3),
+            })
+            optimization_chart_rows.append({
+                "label": f"{name} / {TASK_LABELS[task]}",
+                "before": before,
+                "after": after,
+                "gain": gain,
+            })
 
     model_type_rows = []
     for name in sorted({k[0] for k in by_model_type}):
@@ -387,7 +541,7 @@ def main():
     .card {{ padding: 18px; min-height: 104px; }}
     .card b {{ display: block; font-size: 28px; line-height: 1; margin-bottom: 8px; }}
     .card span {{ color: var(--muted); font-size: 13px; }}
-    section {{ margin-top: 18px; padding: 20px; overflow: hidden; }}
+    section {{ margin-top: 18px; padding: 20px; overflow-x: auto; overflow-y: hidden; }}
     h2 {{ margin: 0 0 8px; font-size: 22px; letter-spacing: 0; }}
     .note {{ color: var(--muted); margin: 0 0 18px; }}
     .grid2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }}
@@ -399,7 +553,7 @@ def main():
     .heatvalue {{ font-size: 16px; fill: #0f172a; font-weight: 800; }}
     .axis {{ stroke: #94a3b8; stroke-width: 1.2; }}
     .grid {{ stroke: #e2e8f0; stroke-width: 1; }}
-    table {{ width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }}
+    table {{ width: 100%; min-width: 760px; border-collapse: collapse; margin-top: 12px; font-size: 14px; }}
     th, td {{ padding: 9px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; }}
     th {{ color: #475569; font-size: 12px; letter-spacing: 0; }}
     .callout {{ border-left: 4px solid var(--accent); padding: 12px 14px; background: #eff6ff; border-radius: 6px; }}
@@ -447,6 +601,18 @@ def main():
       {bar_chart("目标分与AI平均评分", "按题型和预设档位分组", type_rows, ["target", "score"], ["目标分", "AI平均评分"], ["#64748b", "#f59e0b"], height=430)}
     </section>
 
+    <section>
+      <h2>常规评分：各模型在不同档位上的表现</h2>
+      <p class="note">稳定性分由同一模型三次重复评分的平均标准差换算而来；一致性分由该模型平均分与四模型总体平均分的距离换算而来。两个分数均为0-100，越高越好。</p>
+      {table(["模型", "档位", "样本数", "平均评分", "平均偏差", "三轮标准差", "稳定性分", "一致偏离", "一致性分"], [[r["模型"], r["档位"], r["样本数"], r["平均评分"], r["平均偏差"], r["三轮标准差"], r["稳定性分"], r["一致偏离"], r["一致性分"]] for r in level_detail_rows])}
+    </section>
+
+    <section>
+      <h2>常规评分：按题型、模型、档位细分</h2>
+      <p class="note">该表展示每个评分模型对15分应用文和25分读后续写中上等、中等、下等作文的具体评分表现。</p>
+      {table(["模型", "题型", "档位", "样本数", "目标分", "平均评分", "平均绝对误差", "平均偏差", "三轮标准差", "稳定性分", "一致偏离", "一致性分"], [[r["模型"], r["题型"], r["档位"], r["样本数"], r["目标分"], r["平均评分"], r["平均绝对误差"], r["平均偏差"], r["三轮标准差"], r["稳定性分"], r["一致偏离"], r["一致性分"]] for r in regular_detail_rows])}
+    </section>
+
     <section class="grid2">
       <div>{heatmap("偏差热力图", "正值代表高估，负值代表低估", heat_rows, width=540, height=330)}</div>
       <div>{bar_chart("各评分模型在两类题型上的偏差", "AI评分减去目标分", model_type_rows, ["practical", "continuation"], ["15分应用文", "25分读后续写"], ["#14b8a6", "#ef4444"], width=540, height=330)}</div>
@@ -458,6 +624,16 @@ def main():
 
     <section>
       {distribution_chart("常规批改分数分布", "所有常规批改分数，按2分区间统计", distribution_rows)}
+    </section>
+
+    <section>
+      {paired_bar_chart("满分作文优化前后对比", "按优化模型和题型拆分，优化前使用同一批非优化者评分模型在源作文上的常规评分", optimization_chart_rows, height=470)}
+    </section>
+
+    <section>
+      <h2>作文优化：按模型和题型拆分</h2>
+      <p class="note">优化前平均分与优化后平均分使用同一组非本人评分模型进行对照，因此更适合观察优化版本是否真的带来评分提升。</p>
+      {table(["优化模型", "题型", "互评记录数", "优化前平均分", "优化后平均分", "平均提升", "优化后得分率"], [[r["优化模型"], r["题型"], r["互评记录数"], r["优化前平均分"], r["优化后平均分"], r["平均提升"], r["优化后得分率"]] for r in optimization_rows])}
     </section>
 
     <section>

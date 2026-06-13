@@ -631,11 +631,15 @@ def analyze():
     lines.append("")
     lines.append("| 题型 | 档位 | 样本数 | 平均目标分 | 平均评分 | 平均偏差 |")
     lines.append("|---|---|---:|---:|---:|---:|")
-    for (essay_type, level), row in sorted(by_type_level.items()):
-        n = row["n"] or 1
-        avg_score = row["score"] / n
-        avg_target = row["target"] / n
-        lines.append(f"| {display_task_name(essay_type)} | {display_level_name(level)} | {row['n']} | {avg_target:.2f} | {avg_score:.2f} | {avg_score - avg_target:.2f} |")
+    for essay_type in ["practical_15", "continuation_25"]:
+        for level in ["high", "medium", "low"]:
+            row = by_type_level.get((essay_type, level))
+            if not row:
+                continue
+            n = row["n"] or 1
+            avg_score = row["score"] / n
+            avg_target = row["target"] / n
+            lines.append(f"| {display_task_name(essay_type)} | {display_level_name(level)} | {row['n']} | {avg_target:.2f} | {avg_score:.2f} | {avg_score - avg_target:.2f} |")
     lines.append("")
     lines.append("## 满分作文优化互评")
     lines.append("")
