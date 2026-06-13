@@ -1,81 +1,86 @@
-# AI English Essay Grading Experiment
+# AI英语作文评分实验
 
-This repository contains a full experimental run for comparing OpenAI-compatible AI models on English writing task generation, essay generation, grading stability, and full-score essay optimization.
+本仓库保存了一次完整的 AI 英语作文评分能力测试，内容包括命题、分档作文生成、重复批改、满分作文优化，以及优化版本的非本人互评。
 
-The source task is in `题目.md`. It contains two Gaokao-style English writing tasks:
+原始参考题目位于 `题目.md`，包含两类高考英语写作任务：
 
-- a 15-point practical writing task
-- a 25-point continuation writing task
+- 15分应用文
+- 25分读后续写
 
-## Models
+## 测试模型
 
-Four models were tested through OpenAI-compatible APIs:
+本实验通过 OpenAI-compatible API 测试了四个模型：
 
-| Model |
+| 模型 |
 |---|
 | `gpt-5.5` |
 | `gemini-3.5-flash` |
 | `deepseek-v4-pro` |
 | `mimo-v2.5-pro` |
 
-API keys are not included in this repository. Runtime configuration reads key names from environment variables only.
+仓库中不包含任何 API 密钥。运行脚本只从本地环境变量读取密钥值。
 
-## Experiment Design
+## 实验流程
 
-1. Each model generated one new task set.
-2. Each task set contained both a 15-point practical writing task and a 25-point continuation writing task.
-3. Each model generated five essays for every task and task type:
-   - two high-level essays
-   - two medium-level essays
-   - one low-level essay
-4. Target scores were fixed as follows:
-   - practical writing: high 15, medium 10, low 5
-   - continuation writing: high 25, medium 17, low 8
-5. Each original essay was graded by all four models three times.
-6. High-level essays were optimized by all four models.
-7. Optimized essays were graded once by the three models that did not produce that optimized version.
+1. 四个模型各自基于原始题目重新命制一套题。
+2. 每套题都包含一道15分应用文和一道25分读后续写。
+3. 四个模型分别为每套题、每种题型生成五篇作文：
+   - 两篇上等作文
+   - 两篇中等作文
+   - 一篇下等作文
+4. 预设目标分如下：
+   - 15分应用文：上等15分，中等10分，下等5分
+   - 25分读后续写：上等25分，中等17分，下等8分
+5. 所有原始作文由四个模型分别批改三次。
+6. 所有上等作文再由四个模型分别给出优化建议和优化版本。
+7. 每篇优化作文由非本人优化者的三个模型各批改一次。
 
-## Data Scale
+## 数据规模
 
-| Item | Count |
+| 项目 | 数量 |
 |---|---:|
-| Generated task sets | 4 |
-| Original essays | 160 |
-| Regular grading records | 1,920 |
-| Optimized essays | 256 |
-| Optimized cross-grading records | 768 |
+| 新命制题目套数 | 4 |
+| 原始生成作文 | 160 |
+| 常规批改记录 | 1,920 |
+| 优化作文版本 | 256 |
+| 优化后互评记录 | 768 |
 
-## Key Findings
+## 主要发现
 
-The grading models tended to over-score medium and low essays, especially for the 25-point continuation writing task. The medium continuation essays had a target score of 17 but were graded at an average of 21.89.
+四个模型整体都存在高估中低档作文的倾向，尤其是25分读后续写。目标为17分的读后续写中等作文，平均被评为21.89分。
 
-For repeated grading stability, `gemini-3.5-flash` had the lowest average standard deviation, followed by `gpt-5.5`.
+三轮重复评分稳定性方面，`gemini-3.5-flash` 的平均标准差最低，其次是 `gpt-5.5`。
 
-For full-score essay optimization, `gpt-5.5` produced the highest average cross-graded score rate among the tested optimizer models.
+满分作文优化互评中，`gpt-5.5` 生成的优化版本平均得分率最高。
 
-See `REPORT.md`, `reports/summary.md`, and `reports/report.html` for details.
+详细内容见：
 
-## Files
+- `REPORT.md`
+- `reports/summary.md`
+- `reports/report.html`
 
-| Path | Description |
+## 文件说明
+
+| 路径 | 说明 |
 |---|---|
-| `题目.md` | Original writing tasks and grading standards |
-| `config/models.json` | Model metadata and environment variable names |
-| `config/experiment.json` | Experiment settings |
-| `scripts/run_experiment.py` | Experiment runner and analyzer |
-| `data/topics.jsonl` | Generated task sets |
-| `data/essays.jsonl` | Generated essays |
-| `data/grading_runs.jsonl` | Regular grading results |
-| `data/optimized_essays.jsonl` | Optimization suggestions and optimized essays |
-| `data/optimized_grading_runs.jsonl` | Cross-grading results for optimized essays |
-| `reports/summary.md` | Main numeric summary |
-| `reports/report.html` | Visual HTML report with inline charts |
-| `reports/model_bias.csv` | Per-grader scoring bias |
-| `reports/optimizer_scores.csv` | Per-optimizer cross-grading summary |
+| `题目.md` | 原始作文题目与评分标准 |
+| `config/models.json` | 模型配置和环境变量名 |
+| `config/experiment.json` | 实验参数 |
+| `scripts/run_experiment.py` | 实验运行与统计脚本 |
+| `scripts/build_html_report.py` | HTML可视化报告生成脚本 |
+| `data/topics.jsonl` | 四个模型重新命制的题目 |
+| `data/essays.jsonl` | 生成作文 |
+| `data/grading_runs.jsonl` | 常规批改结果 |
+| `data/optimized_essays.jsonl` | 优化建议与优化作文 |
+| `data/optimized_grading_runs.jsonl` | 优化作文互评结果 |
+| `reports/summary.md` | 主要数字摘要 |
+| `reports/report.html` | 带统计图的HTML报告 |
+| `reports/model_bias.csv` | 各评分模型误差统计 |
+| `reports/optimizer_scores.csv` | 各优化模型互评得分统计 |
 
-## Reproduction
+## 复现实验
 
-Set the required environment variables in Windows or in a local `.env` file:
+在 Windows 环境变量或本地 `.env` 文件中设置：
 
 ```env
 Yumu-key=
@@ -83,11 +88,12 @@ Deepseek-key=
 Mimo-key=
 ```
 
-Then run:
+然后运行：
 
 ```powershell
 py scripts/run_experiment.py --phase smoke
 py scripts/run_experiment.py --phase all
+py scripts/build_html_report.py
 ```
 
-The script supports phase-by-phase and resumable execution through JSONL output files.
+脚本支持按阶段运行和基于 JSONL 文件的断点续跑。

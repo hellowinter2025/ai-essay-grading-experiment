@@ -635,7 +635,7 @@ def analyze():
         n = row["n"] or 1
         avg_score = row["score"] / n
         avg_target = row["target"] / n
-        lines.append(f"| {essay_type} | {level} | {row['n']} | {avg_target:.2f} | {avg_score:.2f} | {avg_score - avg_target:.2f} |")
+        lines.append(f"| {display_task_name(essay_type)} | {display_level_name(level)} | {row['n']} | {avg_target:.2f} | {avg_score:.2f} | {avg_score - avg_target:.2f} |")
     lines.append("")
     lines.append("## 满分作文优化互评")
     lines.append("")
@@ -650,13 +650,13 @@ def analyze():
     (REPORTS / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     with (REPORTS / "model_bias.csv").open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["grader_ai", "n", "mean_absolute_error", "mean_bias"])
+        writer.writerow(["评分模型", "样本数", "平均绝对误差", "平均偏差"])
         for model_id, row in sorted(by_model.items(), key=lambda item: display_model_name(item[0])):
             n = row["n"] or 1
             writer.writerow([display_model_name(model_id), row["n"], f"{row['abs_error'] / n:.4f}", f"{row['bias'] / n:.4f}"])
     with (REPORTS / "optimizer_scores.csv").open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["optimizer_ai", "n", "mean_score", "mean_full_score", "score_rate"])
+        writer.writerow(["优化模型", "非本人互评记录数", "平均得分", "平均满分", "得分率"])
         for model_id, row in sorted(by_optimizer.items(), key=lambda item: display_model_name(item[0])):
             n = row["n"] or 1
             avg_score = row["score"] / n
@@ -672,6 +672,21 @@ def display_model_name(model_id: str) -> str:
         "deepseek_v4": "deepseek-v4-pro",
         "mimo_v25": "mimo-v2.5-pro",
     }.get(model_id, model_id)
+
+
+def display_task_name(task_id: str) -> str:
+    return {
+        "practical_15": "15分应用文",
+        "continuation_25": "25分读后续写",
+    }.get(task_id, task_id)
+
+
+def display_level_name(level_id: str) -> str:
+    return {
+        "high": "上等",
+        "medium": "中等",
+        "low": "下等",
+    }.get(level_id, level_id)
 
 
 def to_number(value):

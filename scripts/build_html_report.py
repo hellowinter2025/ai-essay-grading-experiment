@@ -27,6 +27,17 @@ COLORS = {
     "score": "#f59e0b",
 }
 
+TASK_LABELS = {
+    "practical_15": "15分应用文",
+    "continuation_25": "25分读后续写",
+}
+
+LEVEL_LABELS = {
+    "high": "上等",
+    "medium": "中等",
+    "low": "下等",
+}
+
 
 def read_jsonl(name):
     path = DATA / f"{name}.jsonl"
@@ -139,7 +150,7 @@ def heatmap(title, subtitle, rows, width=920, height=320):
     parts = svg_shell(width, height, title, subtitle)
     for r, task in enumerate(tasks):
         y = margin["top"] + r * cell_h
-        parts.append(f'<text x="{margin["left"] - 14}" y="{y + cell_h / 2 + 5:.1f}" class="ylab" text-anchor="end">{esc(task)}</text>')
+        parts.append(f'<text x="{margin["left"] - 14}" y="{y + cell_h / 2 + 5:.1f}" class="ylab" text-anchor="end">{esc(TASK_LABELS.get(task, task))}</text>')
         for c, level in enumerate(levels):
             value = data.get((task, level), 0)
             x = margin["left"] + c * cell_w
@@ -148,7 +159,7 @@ def heatmap(title, subtitle, rows, width=920, height=320):
             parts.append(f'<text x="{x + cell_w / 2:.1f}" y="{y + cell_h / 2 + 5:.1f}" class="heatvalue" text-anchor="middle">{fmt(value)}</text>')
     for c, level in enumerate(levels):
         x = margin["left"] + c * cell_w + cell_w / 2
-        parts.append(f'<text x="{x:.1f}" y="{height - 18}" class="xlab" text-anchor="middle">{esc(level)}</text>')
+        parts.append(f'<text x="{x:.1f}" y="{height - 18}" class="xlab" text-anchor="middle">{esc(LEVEL_LABELS.get(level, level))}</text>')
     return "".join(parts) + "</svg>"
 
 
@@ -185,9 +196,9 @@ def scatter_chart(title, subtitle, points, width=920, height=390):
         x = margin["left"] + plot_w * point["target"] / max_score
         y = margin["top"] + plot_h - plot_h * point["score"] / max_score
         color = COLORS.get(point["model"], "#2563eb")
-        parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.5" fill="{color}" opacity="0.72"><title>{esc(point["model"])} target {fmt(point["target"])} avg {fmt(point["score"])}</title></circle>')
-    parts.append(f'<text x="{margin["left"] + plot_w / 2}" y="{height - 4}" class="axislabel" text-anchor="middle">Target score</text>')
-    parts.append(f'<text x="18" y="{margin["top"] + plot_h / 2}" class="axislabel" transform="rotate(-90 18 {margin["top"] + plot_h / 2})" text-anchor="middle">Average AI score</text>')
+        parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.5" fill="{color}" opacity="0.72"><title>{esc(point["model"])} 目标分 {fmt(point["target"])} 平均分 {fmt(point["score"])}</title></circle>')
+    parts.append(f'<text x="{margin["left"] + plot_w / 2}" y="{height - 4}" class="axislabel" text-anchor="middle">目标分</text>')
+    parts.append(f'<text x="18" y="{margin["top"] + plot_h / 2}" class="axislabel" transform="rotate(-90 18 {margin["top"] + plot_h / 2})" text-anchor="middle">AI平均评分</text>')
     return "".join(parts) + "</svg>"
 
 
@@ -212,7 +223,7 @@ def distribution_chart(title, subtitle, rows, width=920, height=360):
         if count:
             parts.append(f'<text x="{x + (bar_w - 5) / 2:.1f}" y="{y - 6:.1f}" class="value" text-anchor="middle">{count}</text>')
         parts.append(f'<text x="{x + (bar_w - 5) / 2:.1f}" y="{height - 32}" class="tick" text-anchor="middle">{bin_start}</text>')
-    parts.append(f'<text x="{margin["left"] + plot_w / 2}" y="{height - 8}" class="axislabel" text-anchor="middle">Score bucket</text>')
+    parts.append(f'<text x="{margin["left"] + plot_w / 2}" y="{height - 8}" class="axislabel" text-anchor="middle">分数区间</text>')
     return "".join(parts) + "</svg>"
 
 
@@ -317,7 +328,7 @@ def main():
         n = row["n"]
         avg_target = row["target"] / n
         avg_score = row["score"] / n
-        label = f"{task.replace('_', ' ')} / {level}"
+        label = f"{TASK_LABELS.get(task, task)} / {LEVEL_LABELS.get(level, level)}"
         type_rows.append({"label": label, "target": avg_target, "score": avg_score})
         heat_rows.append({"task": task, "level": level, "bias": avg_score - avg_target})
 
@@ -335,11 +346,11 @@ def main():
         model_type_rows.append({"label": name, "practical": practical, "continuation": continuation})
 
     html_doc = f"""<!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI English Essay Grading Experiment - Visual Report</title>
+  <title>AI英语作文评分实验可视化报告</title>
   <style>
     :root {{
       color-scheme: light;
@@ -353,7 +364,7 @@ def main():
     * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
       background: var(--wash);
       line-height: 1.55;
@@ -390,7 +401,7 @@ def main():
     .grid {{ stroke: #e2e8f0; stroke-width: 1; }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }}
     th, td {{ padding: 9px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; }}
-    th {{ color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }}
+    th {{ color: #475569; font-size: 12px; letter-spacing: 0; }}
     .callout {{ border-left: 4px solid var(--accent); padding: 12px 14px; background: #eff6ff; border-radius: 6px; }}
     @media (max-width: 860px) {{
       .cards {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
@@ -405,55 +416,55 @@ def main():
 </head>
 <body>
   <header>
-    <h1>AI English Essay Grading Experiment</h1>
-    <p>A visual report on task generation, controlled essay generation, repeated grading, full-score essay optimization, and non-self cross-grading across four AI models.</p>
+    <h1>AI英语作文评分实验</h1>
+    <p>四个模型围绕高考英语写作完成命题、分档作文生成、三轮批改、满分作文优化与非本人互评后的可视化结果。</p>
   </header>
   <main>
     <div class="cards">
-      <div class="card"><b>{len(topics)}</b><span>Generated task sets</span></div>
-      <div class="card"><b>{len(essays)}</b><span>Original essays</span></div>
-      <div class="card"><b>{len(grades)}</b><span>Regular grading records</span></div>
-      <div class="card"><b>{len(optimized)}</b><span>Optimized essays</span></div>
-      <div class="card"><b>{len(opt_grades)}</b><span>Optimized cross-grades</span></div>
+      <div class="card"><b>{len(topics)}</b><span>新命制题目套数</span></div>
+      <div class="card"><b>{len(essays)}</b><span>原始生成作文</span></div>
+      <div class="card"><b>{len(grades)}</b><span>常规批改记录</span></div>
+      <div class="card"><b>{len(optimized)}</b><span>优化作文版本</span></div>
+      <div class="card"><b>{len(opt_grades)}</b><span>优化后互评记录</span></div>
     </div>
 
     <section>
-      <h2>Executive Summary</h2>
-      <p class="note">The main pattern is generous grading for medium and low essays, especially in the 25-point continuation task. High-level essays were slightly under-scored near the ceiling.</p>
-      <div class="callout">The clearest calibration issue: continuation essays targeting 17 points were graded at an average of 21.89, a positive bias of 4.89 points.</div>
+      <h2>核心结论</h2>
+      <p class="note">主要现象是模型普遍高估中低档作文，尤其是25分读后续写。上等作文接近满分时，模型反而略微保守。</p>
+      <div class="callout">最明显的校准问题：目标为17分的读后续写中等作文，平均被评到21.89分，平均高估4.89分。</div>
     </section>
 
     <section>
-      {bar_chart("Regular grading accuracy", "Mean absolute error and mean bias by model", model_rows, ["mae", "bias"], ["Mean absolute error", "Mean bias"], ["#2563eb", "#f97316"])}
+      {bar_chart("常规评分准确性", "各模型的平均绝对误差与平均偏差", model_rows, ["mae", "bias"], ["平均绝对误差", "平均偏差"], ["#2563eb", "#f97316"])}
     </section>
 
     <section class="grid2">
-      <div>{horizontal_bar_chart("Repeated grading stability", "Average standard deviation across three runs; lower is steadier", stability_rows, "std", "color", width=540, height=330)}</div>
-      <div>{horizontal_bar_chart("Full-score optimization", "Non-self cross-graded score rate after optimization", optimizer_rows, "rate", "color", width=540, height=330)}</div>
+      <div>{horizontal_bar_chart("三轮评分稳定性", "三次重复批改的平均标准差，越低越稳定", stability_rows, "std", "color", width=540, height=330)}</div>
+      <div>{horizontal_bar_chart("满分作文优化效果", "优化版本经非本人模型互评后的平均得分率", optimizer_rows, "rate", "color", width=540, height=330)}</div>
     </section>
 
     <section>
-      {bar_chart("Target score vs average AI score", "Grouped by task type and intended essay level", type_rows, ["target", "score"], ["Target", "Average AI score"], ["#64748b", "#f59e0b"], height=430)}
+      {bar_chart("目标分与AI平均评分", "按题型和预设档位分组", type_rows, ["target", "score"], ["目标分", "AI平均评分"], ["#64748b", "#f59e0b"], height=430)}
     </section>
 
     <section class="grid2">
-      <div>{heatmap("Bias heatmap", "Positive values mean over-scoring; negative values mean under-scoring", heat_rows, width=540, height=330)}</div>
-      <div>{bar_chart("Bias by task type and grader", "Average score minus target score", model_type_rows, ["practical", "continuation"], ["Practical writing", "Continuation writing"], ["#14b8a6", "#ef4444"], width=540, height=330)}</div>
+      <div>{heatmap("偏差热力图", "正值代表高估，负值代表低估", heat_rows, width=540, height=330)}</div>
+      <div>{bar_chart("各评分模型在两类题型上的偏差", "AI评分减去目标分", model_type_rows, ["practical", "continuation"], ["15分应用文", "25分读后续写"], ["#14b8a6", "#ef4444"], width=540, height=330)}</div>
     </section>
 
     <section>
-      {scatter_chart("Essay-level calibration map", "Each point is one essay averaged over one grader's three repeated scores", scatter_points)}
+      {scatter_chart("作文级校准散点图", "每个点代表某篇作文在某个评分模型三次批改后的平均分", scatter_points)}
     </section>
 
     <section>
-      {distribution_chart("Score distribution", "All regular grading scores, bucketed by two-point intervals", distribution_rows)}
+      {distribution_chart("常规批改分数分布", "所有常规批改分数，按2分区间统计", distribution_rows)}
     </section>
 
     <section>
-      <h2>Model Tables</h2>
-      <p class="note">All names below are standard model names. Channel or provider prefixes are intentionally omitted from the report display.</p>
-      {table(["Model", "Samples", "Mean absolute error", "Mean bias"], [[r["label"], by_model[r["label"]]["n"], fmt(r["mae"]), fmt(r["bias"])] for r in model_rows])}
-      {table(["Optimizer model", "Cross-grading records", "Score rate"], [[r["label"], optimizer[r["label"]]["n"], fmt(r["rate"], 3)] for r in optimizer_rows])}
+      <h2>模型数据表</h2>
+      <p class="note">下表均使用标准模型名称，报告展示中不使用渠道或接口前缀。</p>
+      {table(["模型", "样本数", "平均绝对误差", "平均偏差"], [[r["label"], by_model[r["label"]]["n"], fmt(r["mae"]), fmt(r["bias"])] for r in model_rows])}
+      {table(["优化模型", "非本人互评记录数", "得分率"], [[r["label"], optimizer[r["label"]]["n"], fmt(r["rate"], 3)] for r in optimizer_rows])}
     </section>
   </main>
 </body>

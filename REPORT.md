@@ -1,119 +1,119 @@
-# AI English Essay Grading Experiment Report
+# AI英语作文评分实验报告
 
-## 1. Purpose
+## 1. 实验目的
 
-This experiment tested whether four OpenAI-compatible AI models can reliably perform several tasks related to Gaokao-style English writing assessment:
+本实验测试四个 AI 模型在高考英语写作场景中的综合能力，包括：
 
-- create new writing tasks and scoring rubrics from an existing reference task
-- generate essays at controlled score levels
-- grade essays repeatedly and consistently
-- improve full-score target essays
-- cross-grade optimized essays without self-evaluation by the optimizer
+- 基于参考题目重新命制同级别作文题和评分标准
+- 按指定分值水平生成作文
+- 按评分标准进行重复批改
+- 对满分目标作文提出优化建议并生成优化版本
+- 对优化版本进行非本人互评
 
-The experiment used the source material in `题目.md`, which contains a 15-point practical writing task and a 25-point continuation writing task.
+原始参考材料为 `题目.md`，其中包含一道15分应用文和一道25分读后续写。
 
-## 2. Tested Models
+## 2. 测试模型
 
-| Model |
+| 模型 |
 |---|
 | `gpt-5.5` |
 | `gemini-3.5-flash` |
 | `deepseek-v4-pro` |
 | `mimo-v2.5-pro` |
 
-The experiment runner treats each model as a separate worker. At most one request per model is active at the same time.
+实验运行时，每个模型最多同时只有一个请求在工作，以避免同一模型并发请求造成干扰。
 
-## 3. Experimental Procedure
+## 3. 实验流程
 
-Each model first generated one new task set. Each generated set contains:
+四个模型先各自命制一套新题。每套新题都包含：
 
-- one 15-point practical writing task
-- one 25-point continuation writing task
-- scoring rubrics for both task types
+- 一道15分应用文
+- 一道25分读后续写
+- 两类题型对应的评分标准
 
-For every generated task set and every task type, each model generated five essays:
+随后，四个模型分别为每套题、每种题型生成五篇作文：
 
-- two high-level essays
-- two medium-level essays
-- one low-level essay
+- 两篇上等作文
+- 两篇中等作文
+- 一篇下等作文
 
-The target scores were:
+目标分设置如下：
 
-| Task Type | High | Medium | Low |
+| 题型 | 上等 | 中等 | 下等 |
 |---|---:|---:|---:|
-| Practical writing | 15 | 10 | 5 |
-| Continuation writing | 25 | 17 | 8 |
+| 15分应用文 | 15 | 10 | 5 |
+| 25分读后续写 | 25 | 17 | 8 |
 
-Each original essay was then graded by all four models three times. High-level essays were optimized by all four models. Each optimized essay was graded once by the three non-optimizer models.
+所有原始作文由四个模型分别批改三次。所有上等作文再由四个模型分别优化。每篇优化作文由非本人优化者的三个模型各批改一次。
 
-## 4. Data Scale
+## 4. 数据规模
 
-| Dataset | Count |
+| 数据集 | 数量 |
 |---|---:|
-| Generated task sets | 4 |
-| Original essays | 160 |
-| Regular grading records | 1,920 |
-| Optimized essays | 256 |
-| Optimized cross-grading records | 768 |
+| 新命制题目套数 | 4 |
+| 原始生成作文 | 160 |
+| 常规批改记录 | 1,920 |
+| 优化作文版本 | 256 |
+| 优化后互评记录 | 768 |
 
-All records are stored as JSONL files in `data/`.
+所有原始记录均保存在 `data/` 目录下的 JSONL 文件中。
 
-## 5. Regular Grading Accuracy
+## 5. 常规评分准确性
 
-| Grading Model | Samples | Mean Absolute Error | Mean Bias |
+| 评分模型 | 样本数 | 平均绝对误差 | 平均偏差 |
 |---|---:|---:|---:|
 | `deepseek-v4-pro` | 480 | 2.75 | 2.33 |
 | `gemini-3.5-flash` | 480 | 2.52 | 1.98 |
 | `gpt-5.5` | 480 | 2.90 | 2.04 |
 | `mimo-v2.5-pro` | 480 | 2.53 | 1.30 |
 
-All four graders showed positive mean bias, meaning they tended to assign scores above the target scores used during essay generation. `mimo-v2.5-pro` had the lowest mean bias, while `gemini-3.5-flash` had the lowest mean absolute error by a small margin.
+四个模型的平均偏差均为正值，说明它们整体倾向于给出高于目标分的分数。其中 `mimo-v2.5-pro` 平均偏差最低，`gemini-3.5-flash` 平均绝对误差略低。
 
-## 6. Repeated Grading Stability
+## 6. 三轮评分稳定性
 
-| Grading Model | Essay Groups | Average Standard Deviation |
+| 评分模型 | 作文组数 | 平均标准差 |
 |---|---:|---:|
 | `deepseek-v4-pro` | 160 | 0.47 |
 | `gemini-3.5-flash` | 160 | 0.19 |
 | `gpt-5.5` | 160 | 0.24 |
 | `mimo-v2.5-pro` | 160 | 0.57 |
 
-`gemini-3.5-flash` and `gpt-5.5` were the most stable across three repeated grading runs. This does not necessarily mean they were the most accurate, but their repeated scores varied less.
+`gemini-3.5-flash` 和 `gpt-5.5` 在三次重复批改中的波动最小。这说明它们给分更稳定，但稳定不等于准确，仍需结合目标分偏差一起判断。
 
-## 7. Task-Type and Level Effects
+## 7. 题型与档位影响
 
-| Task Type | Level | Samples | Mean Target | Mean Score | Mean Bias |
+| 题型 | 档位 | 样本数 | 平均目标分 | 平均评分 | 平均偏差 |
 |---|---|---:|---:|---:|---:|
-| continuation_25 | high | 384 | 25.00 | 23.66 | -1.34 |
-| continuation_25 | low | 192 | 8.00 | 11.84 | 3.84 |
-| continuation_25 | medium | 384 | 17.00 | 21.89 | 4.89 |
-| practical_15 | high | 384 | 15.00 | 14.64 | -0.36 |
-| practical_15 | low | 192 | 5.00 | 6.87 | 1.87 |
-| practical_15 | medium | 384 | 10.00 | 13.52 | 3.52 |
+| 25分读后续写 | 上等 | 384 | 25.00 | 23.66 | -1.34 |
+| 25分读后续写 | 下等 | 192 | 8.00 | 11.84 | 3.84 |
+| 25分读后续写 | 中等 | 384 | 17.00 | 21.89 | 4.89 |
+| 15分应用文 | 上等 | 384 | 15.00 | 14.64 | -0.36 |
+| 15分应用文 | 下等 | 192 | 5.00 | 6.87 | 1.87 |
+| 15分应用文 | 中等 | 384 | 10.00 | 13.52 | 3.52 |
 
-The largest issue is score compression toward the upper range. Medium and low essays were often graded too highly. This was especially visible for continuation writing, where medium essays targeted at 17 points received an average score of 21.89.
+最明显的问题是分数向高分段压缩：中等和下等作文经常被高估。这个问题在25分读后续写中尤其明显，中等目标17分的作文平均被评到21.89分。
 
-High-level essays were slightly under-scored on average. This suggests that the graders were conservative near full score but generous with weaker essays.
+上等作文则略有低估，说明模型在接近满分时相对保守，但面对中低档作文时不够严格。
 
-## 8. Full-Score Essay Optimization
+## 8. 满分作文优化互评
 
-| Optimizer Model | Cross-Grading Records | Mean Score | Mean Full Score | Score Rate |
+| 优化模型 | 非本人互评记录数 | 平均得分 | 平均满分 | 得分率 |
 |---|---:|---:|---:|---:|
 | `deepseek-v4-pro` | 192 | 19.09 | 20.00 | 0.955 |
 | `gemini-3.5-flash` | 192 | 19.20 | 20.00 | 0.960 |
 | `gpt-5.5` | 192 | 19.35 | 20.00 | 0.967 |
 | `mimo-v2.5-pro` | 192 | 19.15 | 20.00 | 0.957 |
 
-The optimizer comparison combines 15-point and 25-point tasks, so the mean full score is 20.00. `gpt-5.5` produced the highest average optimized essay score rate under non-self cross-grading.
+这里的平均满分为20分，是因为15分应用文和25分读后续写混合统计。`gpt-5.5` 优化版本的非本人互评得分率最高。
 
-## 9. Operational Notes
+## 9. 执行说明
 
-The experiment was run with resumable JSONL outputs. One long regular-grading run reached the execution timeout after 1,890 records; the runner was resumed and completed the remaining records. One optimization response contained non-strict JSON string formatting; the parser was improved to support non-strict JSON parsing and partial JSON recovery, then the missing record was rerun.
+实验使用 JSONL 文件断点续跑。常规批改阶段曾因长时间运行达到工具超时，但已通过断点续跑补齐。优化阶段曾有一条响应存在非严格 JSON 字符串格式，解析器已增强并重新补跑完成。
 
-No API key values are stored in this repository. API key names are kept in configuration, while values are read from local environment variables at runtime.
+仓库不保存任何 API 密钥。配置文件只保存环境变量名称，密钥值只在本地运行时读取。
 
-## 10. Conclusion
+## 10. 结论
 
-The experiment suggests that these models can follow essay grading rubrics and produce stable scores, but they are not well calibrated across score levels. Their most important weakness is over-scoring medium and low-quality essays, especially in continuation writing.
+本实验表明，四个模型都能依据评分标准给出相对稳定的批改结果，但分数校准仍有明显问题。最大风险是高估中低档作文，尤其是读后续写题型。
 
-For practical use, AI grading should be calibrated with human-scored anchor essays. A future experiment should add human reference scores, item-level rubric labels, and pairwise ranking tasks to separate grading consistency from grading correctness.
+如果要把 AI 批改用于真实教学或考试辅助，建议加入人工锚定作文、人工参考分、分项评分标签和成对排序任务，用来区分“评分稳定”与“评分准确”。

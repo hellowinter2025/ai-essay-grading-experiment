@@ -1,4 +1,4 @@
-﻿grader_ai,n,mean_absolute_error,mean_bias
+﻿评分模型,样本数,平均绝对误差,平均偏差
 deepseek-v4-pro,480,2.7458,2.3333
 gemini-3.5-flash,480,2.5208,1.9833
 gpt-5.5,480,2.8958,2.0417

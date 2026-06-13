@@ -1,4 +1,4 @@
-﻿optimizer_ai,n,mean_score,mean_full_score,score_rate
+﻿优化模型,非本人互评记录数,平均得分,平均满分,得分率
 deepseek-v4-pro,192,19.0938,20.0000,0.9547
 gemini-3.5-flash,192,19.1979,20.0000,0.9599
 gpt-5.5,192,19.3490,20.0000,0.9674
