@@ -230,33 +230,38 @@ def distribution_chart(title, subtitle, rows, width=920, height=360):
     return "".join(parts) + "</svg>"
 
 
-def paired_bar_chart(title, subtitle, rows, width=920, height=420):
-    margin = {"top": 58, "right": 30, "bottom": 88, "left": 58}
+def paired_bar_chart(title, subtitle, rows, width=920, height=560):
+    margin = {"top": 70, "right": 78, "bottom": 42, "left": 172}
     plot_w = width - margin["left"] - margin["right"]
-    plot_h = height - margin["top"] - margin["bottom"]
     max_value = max([0.1] + [row["before"] for row in rows] + [row["after"] for row in rows])
-    y_zero = margin["top"] + plot_h
-    scale = plot_h / max_value
-    group_w = plot_w / max(1, len(rows))
-    bar_w = min(24, group_w / 3.2)
+    scale = plot_w / max_value
+    grouped = {task: [row for row in rows if row["task"] == task] for task in TASK_ORDER}
+    row_h = 42
+    gap = 38
+    y = margin["top"]
     parts = svg_shell(width, height, title, subtitle)
-    parts.append(f'<line x1="{margin["left"]}" y1="{y_zero:.1f}" x2="{width - margin["right"]}" y2="{y_zero:.1f}" class="axis"/>')
-    for i, row in enumerate(rows):
-        center = margin["left"] + group_w * i + group_w / 2
-        for j, key in enumerate(["before", "after"]):
-            value = row[key]
-            x = center + (j - 1) * bar_w
-            h = value * scale
-            y = y_zero - h
-            color = "#94a3b8" if key == "before" else "#2563eb"
-            parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w - 4:.1f}" height="{h:.1f}" rx="4" fill="{color}"/>')
-            parts.append(f'<text x="{x + (bar_w - 4) / 2:.1f}" y="{y - 7:.1f}" class="value" text-anchor="middle">{fmt(value)}</text>')
-        parts.append(f'<text x="{center:.1f}" y="{height - 52}" class="xlab" text-anchor="middle">{esc(row["label"])}</text>')
-        parts.append(f'<text x="{center:.1f}" y="{height - 34}" class="tick" text-anchor="middle">提升 {fmt(row["gain"])}</text>')
-    parts.append(f'<rect x="{margin["left"]}" y="{height - 20}" width="12" height="12" rx="2" fill="#94a3b8"/>')
-    parts.append(f'<text x="{margin["left"] + 18}" y="{height - 10}" class="legend">优化前</text>')
-    parts.append(f'<rect x="{margin["left"] + 110}" y="{height - 20}" width="12" height="12" rx="2" fill="#2563eb"/>')
-    parts.append(f'<text x="{margin["left"] + 128}" y="{height - 10}" class="legend">优化后</text>')
+    for task in TASK_ORDER:
+        task_rows = grouped.get(task, [])
+        if not task_rows:
+            continue
+        parts.append(f'<text x="24" y="{y + 2}" class="chart-subtitle">{TASK_LABELS[task]}</text>')
+        y += 14
+        for row in task_rows:
+            label_y = y + 23
+            parts.append(f'<text x="{margin["left"] - 14}" y="{label_y}" class="ylab" text-anchor="end">{esc(row["model"])}</text>')
+            before_w = row["before"] * scale
+            after_w = row["after"] * scale
+            parts.append(f'<rect x="{margin["left"]}" y="{y + 3}" width="{before_w:.1f}" height="14" rx="4" fill="#94a3b8"/>')
+            parts.append(f'<rect x="{margin["left"]}" y="{y + 22}" width="{after_w:.1f}" height="14" rx="4" fill="#2563eb"/>')
+            parts.append(f'<text x="{margin["left"] + before_w + 7:.1f}" y="{y + 15}" class="value">{fmt(row["before"])}</text>')
+            parts.append(f'<text x="{margin["left"] + after_w + 7:.1f}" y="{y + 34}" class="value">{fmt(row["after"])} / 提升 {fmt(row["gain"])}</text>')
+            y += row_h
+        y += gap
+    legend_y = height - 22
+    parts.append(f'<rect x="{margin["left"]}" y="{legend_y}" width="12" height="12" rx="2" fill="#94a3b8"/>')
+    parts.append(f'<text x="{margin["left"] + 18}" y="{legend_y + 10}" class="legend">优化前</text>')
+    parts.append(f'<rect x="{margin["left"] + 110}" y="{legend_y}" width="12" height="12" rx="2" fill="#2563eb"/>')
+    parts.append(f'<text x="{margin["left"] + 128}" y="{legend_y + 10}" class="legend">优化后</text>')
     return "".join(parts) + "</svg>"
 
 
@@ -488,6 +493,8 @@ def main():
             })
             optimization_chart_rows.append({
                 "label": f"{name} / {TASK_LABELS[task]}",
+                "model": name,
+                "task": task,
                 "before": before,
                 "after": after,
                 "gain": gain,
@@ -627,12 +634,15 @@ def main():
     </section>
 
     <section>
-      {paired_bar_chart("满分作文优化前后对比", "按优化模型和题型拆分，优化前使用同一批非优化者评分模型在源作文上的常规评分", optimization_chart_rows, height=470)}
+      {paired_bar_chart("满分作文优化前后对比", "按题型分面展示；每行同一模型的优化前与优化后得分，避免长标签挤压", optimization_chart_rows, height=560)}
     </section>
 
     <section>
       <h2>作文优化：按模型和题型拆分</h2>
       <p class="note">优化前平均分与优化后平均分使用同一组非本人评分模型进行对照，因此更适合观察优化版本是否真的带来评分提升。</p>
+      <p>应用文部分整体已经接近满分，四个模型的优化后平均分都在14.62分以上，提升幅度集中在0.03到0.15分之间。`gemini-3.5-flash` 的应用文优化提升最大，从14.54分升至14.69分；`mimo-v2.5-pro` 的优化后得分率最高，达到0.992，但它的提升幅度只有0.03分，说明原文在非本人评分中已经非常接近满分。</p>
+      <p>读后续写部分的差异更有解释价值。`gpt-5.5` 的优化版本从23.82分提升到23.99分，是续写中提升最大的模型；`deepseek-v4-pro` 与 `gemini-3.5-flash` 也有小幅正向提升。`mimo-v2.5-pro` 的续写优化后平均分从23.74分下降到23.42分，说明它给出的优化可能改变了续写中的情节自然度、语言匹配度或评分模型偏好的表达方式。</p>
+      <p>因此，满分作文优化阶段不能只看“优化后绝对分”。应用文更容易被优化到接近满分，读后续写则更敏感：优化文本如果语言更华丽但情节衔接或原文融洽度下降，可能反而降低互评分数。</p>
       {table(["优化模型", "题型", "互评记录数", "优化前平均分", "优化后平均分", "平均提升", "优化后得分率"], [[r["优化模型"], r["题型"], r["互评记录数"], r["优化前平均分"], r["优化后平均分"], r["平均提升"], r["优化后得分率"]] for r in optimization_rows])}
     </section>
 
