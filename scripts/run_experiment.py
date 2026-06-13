@@ -615,17 +615,17 @@ def analyze():
     lines.append("")
     lines.append("| 评分模型 | 样本数 | 平均绝对误差 | 平均偏差 |")
     lines.append("|---|---:|---:|---:|")
-    for model_id, row in sorted(by_model.items()):
+    for model_id, row in sorted(by_model.items(), key=lambda item: display_model_name(item[0])):
         n = row["n"] or 1
-        lines.append(f"| {model_id} | {row['n']} | {row['abs_error'] / n:.2f} | {row['bias'] / n:.2f} |")
+        lines.append(f"| {display_model_name(model_id)} | {row['n']} | {row['abs_error'] / n:.2f} | {row['bias'] / n:.2f} |")
     lines.append("")
     lines.append("## 三次评分稳定性")
     lines.append("")
     lines.append("| 评分模型 | 作文组数 | 平均标准差 |")
     lines.append("|---|---:|---:|")
-    for model_id, row in sorted(stability.items()):
+    for model_id, row in sorted(stability.items(), key=lambda item: display_model_name(item[0])):
         n = row["n"] or 1
-        lines.append(f"| {model_id} | {row['n']} | {row['std'] / n:.2f} |")
+        lines.append(f"| {display_model_name(model_id)} | {row['n']} | {row['std'] / n:.2f} |")
     lines.append("")
     lines.append("## 题型与档位")
     lines.append("")
@@ -641,28 +641,37 @@ def analyze():
     lines.append("")
     lines.append("| 优化模型 | 非本人互评数 | 平均得分 | 平均满分 | 得分率 |")
     lines.append("|---|---:|---:|---:|---:|")
-    for model_id, row in sorted(by_optimizer.items()):
+    for model_id, row in sorted(by_optimizer.items(), key=lambda item: display_model_name(item[0])):
         n = row["n"] or 1
         avg_score = row["score"] / n
         avg_full = row["full"] / n
         rate = avg_score / avg_full if avg_full else 0
-        lines.append(f"| {model_id} | {row['n']} | {avg_score:.2f} | {avg_full:.2f} | {rate:.3f} |")
+        lines.append(f"| {display_model_name(model_id)} | {row['n']} | {avg_score:.2f} | {avg_full:.2f} | {rate:.3f} |")
     (REPORTS / "summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     with (REPORTS / "model_bias.csv").open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["grader_ai", "n", "mean_absolute_error", "mean_bias"])
-        for model_id, row in sorted(by_model.items()):
+        for model_id, row in sorted(by_model.items(), key=lambda item: display_model_name(item[0])):
             n = row["n"] or 1
-            writer.writerow([model_id, row["n"], f"{row['abs_error'] / n:.4f}", f"{row['bias'] / n:.4f}"])
+            writer.writerow([display_model_name(model_id), row["n"], f"{row['abs_error'] / n:.4f}", f"{row['bias'] / n:.4f}"])
     with (REPORTS / "optimizer_scores.csv").open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["optimizer_ai", "n", "mean_score", "mean_full_score", "score_rate"])
-        for model_id, row in sorted(by_optimizer.items()):
+        for model_id, row in sorted(by_optimizer.items(), key=lambda item: display_model_name(item[0])):
             n = row["n"] or 1
             avg_score = row["score"] / n
             avg_full = row["full"] / n
-            writer.writerow([model_id, row["n"], f"{avg_score:.4f}", f"{avg_full:.4f}", f"{(avg_score / avg_full if avg_full else 0):.4f}"])
+            writer.writerow([display_model_name(model_id), row["n"], f"{avg_score:.4f}", f"{avg_full:.4f}", f"{(avg_score / avg_full if avg_full else 0):.4f}"])
     print("report: reports/summary.md")
+
+
+def display_model_name(model_id: str) -> str:
+    return {
+        "yumu_gpt55": "gpt-5.5",
+        "yumu_gemini35": "gemini-3.5-flash",
+        "deepseek_v4": "deepseek-v4-pro",
+        "mimo_v25": "mimo-v2.5-pro",
+    }.get(model_id, model_id)
 
 
 def to_number(value):

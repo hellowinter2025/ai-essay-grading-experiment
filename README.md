@@ -9,14 +9,14 @@ The source task is in `题目.md`. It contains two Gaokao-style English writing 
 
 ## Models
 
-Four model identities were tested through OpenAI-compatible APIs:
+Four models were tested through OpenAI-compatible APIs:
 
-| Model ID | Model |
-|---|---|
-| `yumu_gpt55` | `gpt-5.5` |
-| `yumu_gemini35` | `gemini-3.5-flash` |
-| `deepseek_v4` | `deepseek-v4-pro` |
-| `mimo_v25` | `mimo-v2.5-pro` |
+| Model |
+|---|
+| `gpt-5.5` |
+| `gemini-3.5-flash` |
+| `deepseek-v4-pro` |
+| `mimo-v2.5-pro` |
 
 API keys are not included in this repository. Runtime configuration reads key names from environment variables only.
 
@@ -49,11 +49,11 @@ API keys are not included in this repository. Runtime configuration reads key na
 
 The grading models tended to over-score medium and low essays, especially for the 25-point continuation writing task. The medium continuation essays had a target score of 17 but were graded at an average of 21.89.
 
-For repeated grading stability, `yumu_gemini35` had the lowest average standard deviation, followed by `yumu_gpt55`.
+For repeated grading stability, `gemini-3.5-flash` had the lowest average standard deviation, followed by `gpt-5.5`.
 
-For full-score essay optimization, `yumu_gpt55` produced the highest average cross-graded score rate among the tested optimizer models.
+For full-score essay optimization, `gpt-5.5` produced the highest average cross-graded score rate among the tested optimizer models.
 
-See `REPORT.md` and `reports/summary.md` for details.
+See `REPORT.md`, `reports/summary.md`, and `reports/report.html` for details.
 
 ## Files
 
@@ -69,6 +69,7 @@ See `REPORT.md` and `reports/summary.md` for details.
 | `data/optimized_essays.jsonl` | Optimization suggestions and optimized essays |
 | `data/optimized_grading_runs.jsonl` | Cross-grading results for optimized essays |
 | `reports/summary.md` | Main numeric summary |
+| `reports/report.html` | Visual HTML report with inline charts |
 | `reports/model_bias.csv` | Per-grader scoring bias |
 | `reports/optimizer_scores.csv` | Per-optimizer cross-grading summary |
 

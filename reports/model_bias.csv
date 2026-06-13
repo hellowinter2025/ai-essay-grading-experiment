@@ -1,5 +1,5 @@
 ﻿grader_ai,n,mean_absolute_error,mean_bias
-deepseek_v4,480,2.7458,2.3333
-mimo_v25,480,2.5271,1.3021
-yumu_gemini35,480,2.5208,1.9833
-yumu_gpt55,480,2.8958,2.0417
+deepseek-v4-pro,480,2.7458,2.3333
+gemini-3.5-flash,480,2.5208,1.9833
+gpt-5.5,480,2.8958,2.0417
+mimo-v2.5-pro,480,2.5271,1.3021

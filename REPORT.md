@@ -14,12 +14,12 @@ The experiment used the source material in `题目.md`, which contains a 15-poin
 
 ## 2. Tested Models
 
-| Model ID | Model |
-|---|---|
-| `yumu_gpt55` | `gpt-5.5` |
-| `yumu_gemini35` | `gemini-3.5-flash` |
-| `deepseek_v4` | `deepseek-v4-pro` |
-| `mimo_v25` | `mimo-v2.5-pro` |
+| Model |
+|---|
+| `gpt-5.5` |
+| `gemini-3.5-flash` |
+| `deepseek-v4-pro` |
+| `mimo-v2.5-pro` |
 
 The experiment runner treats each model as a separate worker. At most one request per model is active at the same time.
 
@@ -62,23 +62,23 @@ All records are stored as JSONL files in `data/`.
 
 | Grading Model | Samples | Mean Absolute Error | Mean Bias |
 |---|---:|---:|---:|
-| `deepseek_v4` | 480 | 2.75 | 2.33 |
-| `mimo_v25` | 480 | 2.53 | 1.30 |
-| `yumu_gemini35` | 480 | 2.52 | 1.98 |
-| `yumu_gpt55` | 480 | 2.90 | 2.04 |
+| `deepseek-v4-pro` | 480 | 2.75 | 2.33 |
+| `gemini-3.5-flash` | 480 | 2.52 | 1.98 |
+| `gpt-5.5` | 480 | 2.90 | 2.04 |
+| `mimo-v2.5-pro` | 480 | 2.53 | 1.30 |
 
-All four graders showed positive mean bias, meaning they tended to assign scores above the target scores used during essay generation. `mimo_v25` had the lowest mean bias, while `yumu_gemini35` had the lowest mean absolute error by a small margin.
+All four graders showed positive mean bias, meaning they tended to assign scores above the target scores used during essay generation. `mimo-v2.5-pro` had the lowest mean bias, while `gemini-3.5-flash` had the lowest mean absolute error by a small margin.
 
 ## 6. Repeated Grading Stability
 
 | Grading Model | Essay Groups | Average Standard Deviation |
 |---|---:|---:|
-| `deepseek_v4` | 160 | 0.47 |
-| `mimo_v25` | 160 | 0.57 |
-| `yumu_gemini35` | 160 | 0.19 |
-| `yumu_gpt55` | 160 | 0.24 |
+| `deepseek-v4-pro` | 160 | 0.47 |
+| `gemini-3.5-flash` | 160 | 0.19 |
+| `gpt-5.5` | 160 | 0.24 |
+| `mimo-v2.5-pro` | 160 | 0.57 |
 
-`yumu_gemini35` and `yumu_gpt55` were the most stable across three repeated grading runs. This does not necessarily mean they were the most accurate, but their repeated scores varied less.
+`gemini-3.5-flash` and `gpt-5.5` were the most stable across three repeated grading runs. This does not necessarily mean they were the most accurate, but their repeated scores varied less.
 
 ## 7. Task-Type and Level Effects
 
@@ -99,12 +99,12 @@ High-level essays were slightly under-scored on average. This suggests that the 
 
 | Optimizer Model | Cross-Grading Records | Mean Score | Mean Full Score | Score Rate |
 |---|---:|---:|---:|---:|
-| `deepseek_v4` | 192 | 19.09 | 20.00 | 0.955 |
-| `mimo_v25` | 192 | 19.15 | 20.00 | 0.957 |
-| `yumu_gemini35` | 192 | 19.20 | 20.00 | 0.960 |
-| `yumu_gpt55` | 192 | 19.35 | 20.00 | 0.967 |
+| `deepseek-v4-pro` | 192 | 19.09 | 20.00 | 0.955 |
+| `gemini-3.5-flash` | 192 | 19.20 | 20.00 | 0.960 |
+| `gpt-5.5` | 192 | 19.35 | 20.00 | 0.967 |
+| `mimo-v2.5-pro` | 192 | 19.15 | 20.00 | 0.957 |
 
-The optimizer comparison combines 15-point and 25-point tasks, so the mean full score is 20.00. `yumu_gpt55` produced the highest average optimized essay score rate under non-self cross-grading.
+The optimizer comparison combines 15-point and 25-point tasks, so the mean full score is 20.00. `gpt-5.5` produced the highest average optimized essay score rate under non-self cross-grading.
 
 ## 9. Operational Notes
 
